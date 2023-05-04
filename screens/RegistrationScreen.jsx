@@ -1,198 +1,290 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   StyleSheet,
-  Text,
-  View,
-  ImageBackground,
   TextInput,
+  View,
+  ScrollView,
   TouchableOpacity,
-  Platform,
+  Alert,
+  Text,
   KeyboardAvoidingView,
-  Keyboard,
+  Platform,
   TouchableWithoutFeedback,
+  Keyboard,
+  ImageBackground,
   Dimensions,
 } from "react-native";
 
-import { useDispatch } from "react-redux";
-import { authSignUpUser } from "../../redux/auth/auth-operations";
+import { useFonts } from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
+import Add from "../assets/images/add.png";
 
-const initialState = {
-  email: "",
-  password: "",
-  nickname: "",
-};
 
-export default function RegisterScreen({ navigation }) {
-  const [isShowKeyboard, setIsShowKeyboard] = useState(false);
-  const [state, setState] = useState(initialState);
+const RegistrationScreen = () => {
+  const [login, setLogin] = useState("");
+  const [focusLogin, setFocusLogin] = useState(false);
 
-  const dispatch = useDispatch();
+  const [email, setEmail] = useState("");
+  const [focusEmail, setIsFocusEmail] = useState(false);
 
-  const [dimensions, setDimensions] = useState(
-    Dimensions.get("window").width - 20 * 2
-  );
+  const [password, setPassword] = useState("");
+  const [focusPassword, setFocusPassword] = useState(false);
+  const [isPasswordHidden, setIsPasswordHidden] = useState(true);
+
+  const [phoneWidth, setPhoneWidth] = useState(Dimensions.get("window").width);
+  const [phoneHeight, setPhoneHeight] = useState(Dimensions.get("window").height);
 
   useEffect(() => {
     const onChange = () => {
-      const width = Dimensions.get("window").width - 20 * 2;
-      setDimensions(width);
+      const width = Dimensions.get("window").width;
+      setPhoneWidth(width);
+
+      const height = Dimensions.get("window").height;
+      setPhoneHeight(height);
     };
+    const addListener = Dimensions.addEventListener("change", onChange);
 
-    const subscription = Dimensions.addEventListener("change", onChange);
-
-    return () => subscription?.remove();
+    return () => addListener.remove();
   }, []);
 
-  const keyboardHide = () => {
-    setIsShowKeyboard(false);
+  const loginSave = (login) => setLogin(login);
+  const emailSave = (email) => setEmail(email);
+  const passwordSave = (password) => setPassword(password);
+
+  const onLogin = () => {
+    if (!login.trim() || !email.trim() || !password.trim()) {
+      Alert.alert(`All fields must be filled!`);
+      return;
+    }
+    Alert.alert(`${login}, Successfully logged in!`);
+    console.log("login" - login, "email" - email, "password" - password);
+    setLogin("");
+    setEmail("");
+    setPassword("");
     Keyboard.dismiss();
   };
 
-  const handleSubmit = () => {
-    setIsShowKeyboard(false);
+  const keyboardIsHidden = () => {
     Keyboard.dismiss();
-    dispatch(authSignUpUser(state));
-    setState(initialState);
   };
+
+  const [fonts] = useFonts({
+    RobotoBold: require("../assets/fonts/Roboto-Bold.ttf"),
+    RobotoRegular: require("../assets/fonts/Roboto-Regular.ttf"),
+  });
+
+  const onLayoutRootView = useCallback(async () => {
+    if (fonts) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fonts]);
+
+  if (!fonts) {
+    return null;
+  }
 
   return (
-    <TouchableWithoutFeedback onPress={keyboardHide}>
-      <View style={styles.container}>
-        <ImageBackground
-          style={styles.image}
-          source={require("../assets/images/bg.jpg")}
-        >
-          <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
+    <KeyboardAvoidingView
+      onLayout={onLayoutRootView}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <TouchableWithoutFeedback onPress={keyboardIsHidden}>
+        <View style={styles.containerFlex}>
+          <ImageBackground
+            style={styles.backgroundImg}
+            source={require("../assets/images/bg.jpg")}
           >
-            <View
-              style={{
-                ...styles.form,
-                marginBottom: isShowKeyboard ? 20 : 100,
-                width: dimensions,
-              }}
-            >
-              <View style={styles.header}>
-                {/* <Text style={styles.red}>MY APLICATION</Text> */}
-                <Text style={styles.headerTitle}>REGISTRATION</Text>
-              </View>
+            <ScrollView>
+              <View
+                style={{
+                  ...styles.wrapper,
+                  width: phoneWidth,
 
-              <View>
-                <Text style={styles.inputTitle}>NickName:</Text>
-                <TextInput
-                  style={styles.input}
-                  textAlign="center"
-                  value={state.nickname}
-                  onFocus={() => setIsShowKeyboard(true)}
-                  onChangeText={(value) =>
-                    setState((prevState) => ({ ...prevState, nickname: value }))
-                  }
-                />
-              </View>
-              <View style={{ marginTop: 20 }}>
-                <Text style={styles.inputTitle}>Email:</Text>
-                <TextInput
-                  style={styles.input}
-                  textAlign="center"
-                  value={state.email}
-                  onFocus={() => setIsShowKeyboard(true)}
-                  onChangeText={(value) =>
-                    setState((prevState) => ({ ...prevState, email: value }))
-                  }
-                />
-              </View>
-              <View style={{ marginTop: 20 }}>
-                <Text style={styles.inputTitle}>Password:</Text>
-                <TextInput
-                  style={styles.input}
-                  textAlign="center"
-                  value={state.password}
-                  onFocus={() => setIsShowKeyboard(true)}
-                  secureTextEntry={true}
-                  onChangeText={(value) =>
-                    setState((prevState) => ({ ...prevState, password: value }))
-                  }
-                />
-              </View>
-              <TouchableOpacity
-                style={styles.btn}
-                activeOpacity={0.8}
-                onPress={handleSubmit}
+                  marginTop: phoneWidth > 400 ? 200 : 300,
+                }}
               >
-                <Text style={styles.btnTitle}>Sign Up</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                activeOpacity={0.5}
-                onPress={() => navigation.navigate("Login")}
-              >
-                <Text style={styles.navTitle}>Go to Login</Text>
-              </TouchableOpacity>
-            </View>
-          </KeyboardAvoidingView>
-        </ImageBackground>
-      </View>
-    </TouchableWithoutFeedback>
+                <View
+                  style={{
+                    ...styles.imageWrap,
+                    left: (phoneWidth - 120) / 2,
+                  }}
+                ></View>
+                <TouchableOpacity
+                  style={{
+                    ...styles.addPng,
+                    right: phoneWidth / 2 - 70,
+                  }}
+                >
+                  <Add />
+                </TouchableOpacity>
+                <View style={{ width: phoneWidth - 16 * 2 }}>
+                  <Text style={styles.title}>Registration</Text>
+                  <TextInput
+                    style={{
+                      ...styles.input,
+                      borderColor: focusLogin ? "#FF6C00" : "#E8E8E8",
+                    }}
+                    onFocus={() => setFocusLogin(true)}
+                    onBlur={() => setFocusLogin(false)}
+                    value={login}
+                    placeholder="Login:"
+                    cursorColor={"#BDBDBD"}
+                    placeholderTextColor={"#BDBDBD"}
+                    onChangeText={loginSave}
+                  ></TextInput>
+                  <TextInput
+                    style={{
+                      ...styles.input,
+                      borderColor: focusEmail ? "#FF6C00" : "#E8E8E8",
+                    }}
+                    onFocus={() => setIsFocusEmail(true)}
+                    onBlur={() => setIsFocusEmail(false)}
+                    value={email}
+                    placeholder="Email:"
+                    cursorColor={"#BDBDBD"}
+                    placeholderTextColor={"#BDBDBD"}
+                    onChangeText={emailSave}
+                    keyboardType="email-address"
+                  ></TextInput>
+                  <TextInput
+                    style={{
+                      ...styles.input,
+                      borderColor: focusPassword ? "#FF6C00" : "#E8E8E8",
+                    }}
+                    onFocus={() => setFocusPassword(true)}
+                    onBlur={() => setFocusPassword(false)}
+                    value={password}
+                    placeholder="Password:"
+                    cursorColor={"#BDBDBD"}
+                    placeholderTextColor={"#BDBDBD"}
+                    secureTextEntry={isPasswordHidden}
+                    onChangeText={passwordSave}
+                  ></TextInput>
+                  <TouchableOpacity
+                    style={styles.isPassword}
+                    onPress={() =>
+                      setIsPasswordHidden((prevState) => !prevState)
+                    }
+                  >
+                    <Text style={styles.isPasswordShow}>
+                      {isPasswordHidden ? "Show" : "Hide"}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.button} onPress={onLogin}>
+                    <Text style={styles.buttonText}>Registration</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity>
+                    <Text style={styles.footer}>Already have an account? Sign In</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+          </ImageBackground>
+        </View>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
-}
+};
+
+export default RegistrationScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
   },
-
-  image: {
+  containerFlex: {
     flex: 1,
-    resizeMode: "cover",
-    justifyContent: "flex-end",
-    alignItems: "center",
-  },
-
-  header: {
-    alignItems: "center",
-    marginBottom: Platform.OS === "ios" ? 30 : 120,
-  },
-
-  headerTitle: {
-    fontFamily: "DMMono-Regular",
-    fontSize: 30,
-    color: "#f0f8ff",
-  },
-
-  input: {
-    height: 40,
-    borderWidth: 1,
-    borderColor: "#f0f8ff",
-    borderRadius: 6,
-    color: "#f0f8ff",
-  },
-
-  inputTitle: {
-    marginBottom: 10,
-    fontFamily: "DMMono-Regular",
-    fontSize: 16,
-    color: "#f0f8ff",
-  },
-
-  btn: {
-    height: 40,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderRadius: 6,
-    marginTop: 40,
-    ...Platform.select({
-      ios: {
-        backgroundColor: "transparent",
-        borderColor: "#f0f8ff",
-      },
-      android: {
-        backgroundColor: "#f00",
-        borderColor: "transparent",
-      },
-    }),
+  },
+  backgroundImg: {
+    flex: 1,
+    justifyContent: "flex-end",
+    resizeMode: "cover",
+  },
+  wrapper: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    height: 550,
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
   },
 
+  imageWrap: {
+    position: "absolute",
+    top: -60,
 
+    width: 120,
+    height: 120,
+
+    backgroundColor: "#F6F6F6",
+    borderRadius: 16,
+  },
+  addPng: {
+    position: "absolute",
+    top: 20,
+    right: 20,
+    width: 25,
+    height: 25,
+  },
+  title: {
+    textAlign: "center",
+
+    marginBottom: 30,
+
+    fontSize: 30,
+    lineHeight: 35,
+    color: "#212121",
+    fontFamily: "RobotoBold",
+  },
+  input: {
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 15,
+    backgroundColor: "#F6F6F6",
+    height: 50,
+    borderWidth: 1,
+    borderRadius: 8,
+    fontFamily: "RobotoRegular",
+
+    color: "#212121",
+  },
+  isPassword: {
+    position: "absolute",
+    right: 0,
+    bottom: 253,
+    paddingRight: 16,
+  },
+  isPasswordShow: {
+    fontSize: 16,
+    lineHeight: 19,
+    color: "#1B4371",
+    fontFamily: "RobotoRegular",
+  },
+
+  button: {
+    height: 50,
+    marginTop: 40,
+    paddingVertical: 16,
+    backgroundColor: "#FF6C00",
+    borderRadius: 100,
+  },
+  buttonText: {
+    fontSize: 16,
+    lineHeight: 19,
+    textAlign: "center",
+    color: "#FFFFFF",
+    fontFamily: "RobotoBold",
+  },
+  footer: {
+    marginTop: 15,
+    marginBottom: 100,
+    textAlign: "center",
+    color: "#1B4371",
+    fontFamily: "RobotoRegular",
+  },
 });
