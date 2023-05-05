@@ -115,6 +115,7 @@ const RegistrationScreen = () => {
                     ...styles.addPng,
                     right: phoneWidth / 2 - 70,
                   }}
+                  onPress={() => console.log('Add button pressed')}
                 >
                   <Add />
                 </TouchableOpacity>
