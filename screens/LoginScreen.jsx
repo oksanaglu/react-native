@@ -15,9 +15,6 @@ import {
   Dimensions,
 } from "react-native";
 
-import { useFonts } from "expo-font";
-import * as SplashScreen from "expo-splash-screen";
-
 const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [focusEmail, setIsFocusEmail] = useState(false);
@@ -27,14 +24,14 @@ const LoginScreen = () => {
   const [isPasswordHidden, setIsPasswordHidden] = useState(true);
 
   const [phoneWidth, setPhoneWidth] = useState(Dimensions.get("window").width);
-  const [phoneHeidth, setPhoneHeidth] = useState(Dimensions.get("window").height);
+  const [phoneHeigth, setPhoneHeigth] = useState(Dimensions.get("window").height);
 
   useEffect(() => {
     const onChange = () => {
       const width = Dimensions.get("window").width;
       setPhoneWidth(width);
       const height = Dimensions.get("window").height;
-      setPhoneHeidth(height);
+      setPhoneHeigth(height);
     };
     const addListener = Dimensions.addEventListener("change", onChange);
 
@@ -68,23 +65,10 @@ const LoginScreen = () => {
     prepare();
   }, []);
 
-  const [fonts] = useFonts({
-    RobotoBold: require("../assets/fonts/Roboto-Bold.ttf"),
-    RobotoRegular: require("../assets/fonts/Roboto-Regular.ttf"),
-  });
-
-  const onLayoutRootView = useCallback(async () => {
-    if (fonts) {
-      await SplashScreen.hideAsync();
-    }
-  }, [fonts]);
-  if (!fonts) {
-    return null;
-  }
+ 
 
   return (
     <KeyboardAvoidingView
-      onLayout={onLayoutRootView}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
@@ -94,7 +78,7 @@ const LoginScreen = () => {
             style={{
               ...styles.backgroundImg,
               width: phoneWidth,
-              height: phoneHeidth,
+              height: phoneHeigth,
             }}
             source={require("../assets/images/bg.jpg")}
           >

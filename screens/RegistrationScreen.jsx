@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   StyleSheet,
   TextInput,
@@ -15,8 +15,7 @@ import {
   Dimensions,
 } from "react-native";
 
-import { useFonts } from "expo-font";
-import * as SplashScreen from "expo-splash-screen";
+
 import Add from "../assets/images/add.png";
 
 
@@ -68,24 +67,10 @@ const RegistrationScreen = () => {
     Keyboard.dismiss();
   };
 
-  const [fonts] = useFonts({
-    RobotoBold: require("../assets/fonts/Roboto-Bold.ttf"),
-    RobotoRegular: require("../assets/fonts/Roboto-Regular.ttf"),
-  });
 
-  const onLayoutRootView = useCallback(async () => {
-    if (fonts) {
-      await SplashScreen.hideAsync();
-    }
-  }, [fonts]);
-
-  if (!fonts) {
-    return null;
-  }
 
   return (
     <KeyboardAvoidingView
-      onLayout={onLayoutRootView}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
