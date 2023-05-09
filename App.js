@@ -1,38 +1,40 @@
-import React, { useCallback } from "react";
-import { StyleSheet, View } from "react-native";
-import { useFonts } from "expo-font";
-import * as SplashScreen from "expo-splash-screen";
-import LoginScreen from "./screens/LoginScreen";
-import RegistrationScreen from "./screens/RegistrationScreen";
-
-SplashScreen.preventAutoHideAsync();
+import React from "react";
+import { useFonts } from 'expo-font';
+import { NavigationContainer } from "@react-navigation/native";
+import { createStackNavigator } from "@react-navigation/stack";
+import LoginScreen from "./screens/Auth/LoginScreen";
+import RegistrationScreen from "./screens/Auth/RegistrationScreen";
+import Home from "./screens/Main/Home";
 
 export default function App() {
-   const [fonts] = useFonts({
-    RobotoBold: require("../assets/fonts/Roboto-Bold.ttf"),
-    RobotoRegular: require("../assets/fonts/Roboto-Regular.ttf"),
-  });
 
-  const onLayoutRootView = useCallback(async () => {
-    if (fonts) {
-      await SplashScreen.hideAsync();
+    const [fontsLoaded] = useFonts({
+      'RobotoRegular': require('./assets/fonts/Roboto-Regular.ttf'),
+      'RobotoBold': require("./assets/fonts/Roboto-Bold.ttf"),
+    });
+
+    if (!fontsLoaded) {
+        return null;
     }
-  }, [fonts]);
-  if (!fonts) {
-    return null;
-  };
 
-  return (
-    <View style={styles.container} onLayout={onLayoutRootView}>
-      {/* <RegistrationScreen /> */}
-      <LoginScreen />
-    </View>
-  );
+    const AuthStack = createStackNavigator();
+
+    return (
+        <NavigationContainer>
+            <AuthStack.Navigator initialRouteName="Registration">
+                <AuthStack.Screen name="Registration"
+                                  component={RegistrationScreen} options={{
+                    headerShown: false,
+                }}/>
+                <AuthStack.Screen name="Login"
+                                  component={LoginScreen} options={{
+                    headerShown: false,
+                }}/>
+                <AuthStack.Screen name="Home"
+                                  component={Home} options={{
+                    headerShown: false,
+                }}/>
+            </AuthStack.Navigator>
+        </NavigationContainer>
+    );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-});
