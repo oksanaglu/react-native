@@ -22,14 +22,14 @@ export default function App() {
     return (
         <NavigationContainer>
             <AuthStack.Navigator initialRouteName="Registration">
-                <AuthStack.Screen name="Registration"
+                {/* <AuthStack.Screen name="Registration"
                                   component={RegistrationScreen} options={{
                     headerShown: false,
                 }}/>
                 <AuthStack.Screen name="Login"
                                   component={LoginScreen} options={{
                     headerShown: false,
-                }}/>
+                }}/> */}
                 <AuthStack.Screen name="Home"
                                   component={Home} options={{
                     headerShown: false,
