@@ -1,25 +1,151 @@
-
-import React from "react";
-import { View, Text, Pressable, TextInput, StyleSheet, } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, Pressable, TextInput, StyleSheet, Image } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { Camera } from "expo-camera";
+import * as Location from "expo-location";
+import * as MediaLibrary from "expo-media-library";
+import { Ionicons } from '@expo/vector-icons';
 
-const CreatePostsScreen = () => {
+
+const initialPictureHeaders = {
+    name: '',
+    place: '',
+}
+
+const CreatePostsScreen = ({ navigation }) => {
+    const [camera, setCamera] = useState(null);
+    const [photoUrl, setPhotoUrl] = useState(null);
+    const [hasPermission, setHasPermission] = useState(null);
+    const [type, setType] = useState(Camera.Constants.Type.back);
+    const [pictureHeaders, setPictureHeaders] = useState(initialPictureHeaders);
+    const [location, setLocation] = useState(null);
+    
+
+    const placeHandler = (value) => {
+        setPictureHeaders((prevState) => ({
+            ...prevState,
+            place: value,
+        }));
+    };
+
+    useEffect(() => {
+        (async () => {
+            const { status } = await Camera.requestCameraPermissionsAsync();
+            await MediaLibrary.requestPermissionsAsync();
+
+            setHasPermission(status === "granted");
+        })();
+
+        (async () => {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== "granted") {
+                console.log("Permission to access location was denied");
+            }
+
+            let locationData = await Location.getCurrentPositionAsync({});
+            const coords = {
+                latitude: locationData.coords.latitude,
+                longitude: locationData.coords.longitude,
+            };
+
+            setLocation(coords);
+        })();
+
+    }, []);
+
+    if (hasPermission === null) {
+        return <View />;
+    }
+    if (hasPermission === false) {
+        return <Text>No access to camera</Text>;
+    }
+
+    const nameHandler = (value) => {
+        setPictureHeaders((prevState) => ({
+            ...prevState,
+            name: value,
+        }));
+    };
+
 
     return (
         <View style={styles.createPostsCont}>
             <View style={styles.createPostsPhoto}>
-                <View style={styles.buttonPhoto}>
-                    <Pressable
-                        onPress={() => alert("Choose a photo!")}
-                        title="LogOut">
-                        <MaterialIcons name="add" size={24} color="#BDBDBD" />
-                    </Pressable>
-                </View>
+                {!photoUrl ? (
+                    <Camera style={styles.createPostsCamera} type={type}
+                        ref={(ref) => {
+                            setCamera(ref);
+                        }}>
+                        <View style={styles.buttonPhoto}>
+                            {!photoUrl && (
+                                <Pressable
+                                    onPress={async () => {
+                                        if (camera) {
+                                            const { uri } = await camera.takePictureAsync();
+                                            setPhotoUrl(uri);
+                                            await MediaLibrary.createAssetAsync(uri);
+                                        }
+                                    }}
+                                    title="TakePicture"
+                                >
+                                    <MaterialIcons name="add" size={24} color="#BDBDBD" />
+                                </Pressable>
+                            )}
+                        </View>
+                    </Camera>
+                ) : (
+                    <View>
+                        <Image style={styles.createPostsCamera}
+                            source={{ uri: photoUrl }} />
+                    </View>
+                )}
             </View>
-            <Text style={styles.text}>Upload photo</Text>
-            <TextInput placeholder="name" style={styles.createInput} />
-            <TextInput placeholder="place" style={styles.createInput} />
-            <Pressable title={"Register"} style={styles.createButton} onPress={() => alert("Upload a photo!")}>
+            {!photoUrl ? (
+                <Pressable style={styles.photoBtnBack}
+                    onPress={() => {
+                        setType(
+                            type === Camera.Constants.Type.back
+                                ? Camera.Constants.Type.front
+                                : Camera.Constants.Type.back
+                        );
+                    }}
+                    title="Reverse Camera"
+                >
+                    <MaterialIcons name="flip-camera-android" size={24} color="#BDBDBD" />
+                </Pressable>
+            ) : (
+                <Pressable style={styles.photoBtnBack}
+                    onPress={() => setPhotoUrl(null)}>
+                    <MaterialIcons name="add-a-photo" size={24} color="#BDBDBD" />
+                </Pressable>
+            )
+            }
+            <TextInput
+                onChangeText={nameHandler}
+                placeholder="name"
+                style={styles.createInput}
+            />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Pressable title={"Map"}
+                    onPress={() => navigation.navigate("Map", {
+                        location,
+                    })}>
+                    <Ionicons name="location-outline" size={24} color="#BDBDBD" />
+                </Pressable>
+                <TextInput
+                    onChangeText={placeHandler}
+                    placeholder='place'
+                    value={pictureHeaders.place}
+                    style={styles.createInput}
+                />
+            </View>
+            <Pressable title={"Register"} style={styles.createButton}
+                onPress={() => navigation.navigate("PostScreen", {
+                    pictureHeaders,
+                    location,
+                    photoUrl,
+                })}
+            >
                 <Text>Publish</Text>
             </Pressable>
         </View>
@@ -85,6 +211,31 @@ export const styles = StyleSheet.create({
 
     text: {
         color: "#BDBDBD"
-    }
+    },
+
+    createPostsCamera: {
+        flex: 1,
+        minWidth: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+
+    },
+    photoBtnBack: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 50,
+        height: 50,
+        padding: 10,
+        borderColor: "grey",
+        borderRadius: 100,
+        marginBottom: 10,
+        backgroundColor: '#F6F6F6',
+        marginTop: 20,
+
+    },
 
 });
+
+
+
