@@ -7,6 +7,11 @@ import {
     TouchableWithoutFeedback, StyleSheet
 } from "react-native";
 
+import {authSignInUser} from "../../redux/auth/authOperations";
+import {useDispatch} from "react-redux";
+
+
+
 const initialState = {
     login: '',
     email: '',
@@ -17,20 +22,23 @@ const LoginScreen = ({navigation}) => {
 
     const [state, setState] = useState(initialState);
 
+    const dispatch = useDispatch();
+
     const nameHandler = (value) =>
         setState((prevState) => ({
             ...prevState, email: value
         }));
+    
     const passwordHandler = (value) =>
         setState((prevState) => ({
             ...prevState, password: value
         }));
 
     const onLogin = () => {
-        console.log(state);
         Keyboard.dismiss()
         setState(initialState);
-        navigation.navigate("Home")
+        dispatch(authSignInUser(state));
+     
     };
 
 

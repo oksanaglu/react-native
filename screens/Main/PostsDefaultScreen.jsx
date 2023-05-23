@@ -1,69 +1,94 @@
 import React from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
+import { useSelector } from "react-redux";
+import {db} from "../../firebase/config";
 
 
 const PostsDefaultScreen = ({ navigation, route }) => {
-  if (!route.params) {
-    return (
-      <View style={styles.postsContainer}>
-        <View style={{ flexDirection: "row" }}>
-          <Image source={require("../../assets/images/Avatar.png")} />
-          <View style={styles.postsTitle}>
-            <Text>Natali Romanova</Text>
-            <Text>e-mail@example.com</Text>
-          </View>
-        </View>
-      </View>
-    );
+  const [posts, setPosts] = useState([])
+  const { login } = useSelector(state => state.auth);
+  const { avatar } = useSelector(state => state.auth)
+
+  let uniquePostId = '';
+  if (route.params) {
+    uniquePostId = route.params.uniquePostId;
   }
 
-  const { location, pictureHeaders, photoUrl, key } = route.params;
+  const q = query(collection(db, "posts"));
+
+  const getAllPosts = async () => {
+    const querySnapshot = await getDocs(q);
+    const allPosts = querySnapshot.docs.map((post) => ({
+      ...post.data(), id: post.id
+    }));
+
+    const sortedPosts = allPosts.sort(
+      (firstContact, secondContact) =>
+        secondContact.id - firstContact.id);
+    setPosts(sortedPosts);
+  }
+
+
+  useEffect(() => {
+    getAllPosts();
+
+  }, [uniquePostId])
 
   return (
     <View style={styles.createPostsCont}>
       <View style={styles.postsProfileSection}>
-        <Image source={require("../../assets/images/Avatar.png")} />
+        <Image style={styles.avatarImg} source={{ uri: avatar }} />
         <View style={styles.postsProfileText}>
-          <Text>Natali Romanova</Text>
-          <Text>e-mail@example.com</Text>
+          <Text>{login}</Text>
         </View>
       </View>
 
-      <View style={styles.postSection}>
-        <Image style={styles.postImage} source={{ uri: photoUrl }} />
-        <View style={styles.postText}>
-          <Text style={{ paddingBottom: 20 }}>{pictureHeaders.name}</Text>
-          <View>
-            <Pressable
-              title={"Map"}
-              onPress={() =>
-                navigation.navigate("Map", {
-                  location,
-                })
-              }
-            >
-              <Ionicons name="location-outline" size={24} color="#BDBDBD" />
-              <Text style={{ paddingBottom: 20 }}>{pictureHeaders.place}</Text>
-            </Pressable>
+      <FlatList data={posts} keyExtractor={post => post.id}
+        renderItem={({ item }) => (
+          <View style={styles.postSection}>
+            <Text style={{ paddingBottom: 20 }}>{item.headers.name}</Text>
+            <Image style={styles.postImage} source={{ uri: item.photoUrl }} />
+            <View style={styles.postText}>
+              <View>
+                {item.location ?
+                  (<Pressable
+                    title={"Map"}
+                    onPress={() =>
+                      navigation.navigate("Map", {
+                        location: item.location,
+                      })
+                    }
+                  >
+                    <Ionicons name="location-outline" size={24} color="#BDBDBD" />
+                    <Text style={{ paddingBottom: 20 }}>{item.headers.place}</Text>
+                  </Pressable>) : (
+                    <Text style={{ paddingBottom: 20 }}>{item.headers.place}</Text>)}
+              </View>
+              <Pressable
+                title={"Comments"}
+                onPress={() =>
+                  navigation.navigate("Comments", {
+                    id: item.id,
+                    header: item.headers.name,
+                    photo: item.photo,
+                    place: item.headers.place,
+                    location: item.location,
+                  })
+                }
+              >
+                <Text style={{ color: "#BDBDBD" }}>
+                  <Ionicons name="chatbubble-outline" size={24} color="#BDBDBD" />
+                  {item.commentsCount ?? 0}
+                </Text>
+              </Pressable>
+            </View>
           </View>
-          <Pressable
-            title={"Comments"}
-            onPress={() =>
-              navigation.navigate("Comments", {
-                location,
-              })
-            }
-          >
-            <Text style={{ color: "#BDBDBD" }}>
-              <Ionicons name="chatbubble-outline" size={24} color="#BDBDBD" /> 0
-            </Text>
-          </Pressable>
-        </View>
-      </View>
+        )} />
     </View>
-  );
+  )
 };
+
 
 export default PostsDefaultScreen;
 
@@ -82,6 +107,13 @@ export const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#FFFFFF',
   },
+
+  avatarImg: {
+    height: 120,
+    width: 120,
+    borderRadius: 16,
+  },
+
      
   postsProfileSection: {
     flexDirection: 'row',
