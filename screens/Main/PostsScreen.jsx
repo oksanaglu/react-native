@@ -1,35 +1,18 @@
 import React from "react";
-import { View, Text, Image, StyleSheet } from "react-native";
-import {createStackNavigator} from "@react-navigation/stack";
+import { createStackNavigator } from "@react-navigation/stack";
 import CommentsScreen from "./CommentsScreen";
 import MapScreen from './MapScreen';
 import PostsDefaultScreen from "./PostsDefaultScreen";
+import { useDispatch } from "react-redux";
+import { authSignOutUser } from "../../redux/auth/authOperations";;
 
 const PostsStack = createStackNavigator();
 
-const PostsScreen = ({ navigation, route }) => {
-    if (!route.params) {
-        return (
-            <View style={styles.postsContainer}>
-                <View style={{
-                    flexDirection: 'row',
-                }}>
-                    <Image source={require('../../assets/images/Avatar.png')} />
-                    <View style={styles.postsTitle}>
-                        <Text>Natali Romanova</Text>
-                        <Text>e-mail@example.com</Text>
-                    </View>
-                </View>
-            </View>
-        )
+const PostsScreen = ({ }) => {
+    const dispatch = useDispatch();
+    const signOut = () => {
+        dispatch(authSignOutUser())
     }
-
-    const {
-        location,
-        pictureHeaders,
-        photoUrl
-    } = route.params;
-
 
     return (
         <PostsStack.Navigator
@@ -44,7 +27,7 @@ const PostsScreen = ({ navigation, route }) => {
                     },
                     headerRight: () => (
                         <Pressable
-                            onPress={() => navigation.navigate("Logout")}
+                            onPress={signOut}
                             title="LogOut"
                         >
                             <MaterialCommunityIcons name="logout" size={24} color="#BDBDBD" />
@@ -52,7 +35,7 @@ const PostsScreen = ({ navigation, route }) => {
                     ),
                     headerLeft: null
                 }}
-                initialParams={{ pictureHeaders, location, photoUrl }} />
+            />
             <PostsStack.Screen name="Map" component={MapScreen}
                 options={{
                     title: 'Photo location map'
@@ -67,17 +50,3 @@ const PostsScreen = ({ navigation, route }) => {
 
 export default PostsScreen;
 
-
-export const styles = StyleSheet.create({
-   
-    postsContainer: {
-        flex: 1,
-        padding: 20,
-        backgroundColor: '#FFFFFF',
-    },
-
-    postsTitle: {
-        justifyContent: 'center',
-        paddingLeft: 20
-    }
-});

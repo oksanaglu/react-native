@@ -5,7 +5,7 @@ import { Camera } from "expo-camera";
 import * as Location from "expo-location";
 import * as MediaLibrary from "expo-media-library";
 import { Ionicons } from '@expo/vector-icons';
-
+import db from "../../firebase/config";
 
 const initialPictureHeaders = {
     name: '',
@@ -19,6 +19,9 @@ const CreatePostsScreen = ({ navigation }) => {
     const [type, setType] = useState(Camera.Constants.Type.back);
     const [pictureHeaders, setPictureHeaders] = useState(initialPictureHeaders);
     const [location, setLocation] = useState(null);
+
+    const { login, userId } = useSelector((state) => state.auth);
+    const storage = getStorage()
     
 
     const placeHandler = (value) => {
@@ -26,7 +29,7 @@ const CreatePostsScreen = ({ navigation }) => {
             ...prevState,
             place: value,
         }));
-    };
+    }
 
     useEffect(() => {
         (async () => {
@@ -40,6 +43,7 @@ const CreatePostsScreen = ({ navigation }) => {
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== "granted") {
                 console.log("Permission to access location was denied");
+                alert("Permission to access location was denied")
             }
 
             let locationData = await Location.getCurrentPositionAsync({});
@@ -48,7 +52,7 @@ const CreatePostsScreen = ({ navigation }) => {
                 longitude: locationData.coords.longitude,
             };
 
-            setLocation(coords);
+            await setLocation(coords);
         })();
 
     }, []);
@@ -60,14 +64,56 @@ const CreatePostsScreen = ({ navigation }) => {
         return <Text>No access to camera</Text>;
     }
 
-    const nameHandler = (value) => {
+    const nameHandler = (value) =>
         setPictureHeaders((prevState) => ({
             ...prevState,
             name: value,
         }));
-    };
 
+    const uploadPhoto = async () => {
+        const response = await fetch(`${photoUrl}`)
+        const file = await response.blob();
+        const uniquePostId = Date.now().toString()
 
+        const imageRef = await ref(storage, `photos/${uniquePostId}`)
+        await uploadBytes(imageRef, file);
+
+        return await getDownloadURL(imageRef);
+    }
+
+    const makePost = async () => {
+        const uniquePostId = Date.now().toString()
+        const photo = await uploadPhoto();
+        await setDoc(doc(db, "posts", `${uniquePostId}`), {
+            photo: photo,
+            location: location,
+            headers: pictureHeaders,
+            login: login,
+            userId: userId,
+            commentsCount: 0,
+        });
+
+        setPictureHeaders(initialPictureHeaders);
+        setPhotoUrl(null);
+
+        await navigation.navigate("PostsDefaultScreen", {
+            uniquePostId,
+        })
+    }
+
+    const takePhoto = async () => {
+        if (camera) {
+            try {
+                const { uri } = await camera.takePictureAsync();
+                setPhotoUrl(uri);
+                await MediaLibrary.createAssetAsync(uri);
+            } catch (err) {
+                console.log(err.message);
+                alert(err.message)
+            }
+        }
+    }
+    
     return (
         <View style={styles.createPostsCont}>
             <View style={styles.createPostsPhoto}>
@@ -79,14 +125,8 @@ const CreatePostsScreen = ({ navigation }) => {
                         <View style={styles.buttonPhoto}>
                             {!photoUrl && (
                                 <Pressable
-                                    onPress={async () => {
-                                        if (camera) {
-                                            const { uri } = await camera.takePictureAsync();
-                                            setPhotoUrl(uri);
-                                            await MediaLibrary.createAssetAsync(uri);
-                                        }
-                                    }}
-                                    title="TakePicture"
+                                    onPress={takePhoto}
+                                    title="TakePhoto "
                                 >
                                     <MaterialIcons name="add" size={24} color="#BDBDBD" />
                                 </Pressable>
@@ -126,12 +166,17 @@ const CreatePostsScreen = ({ navigation }) => {
                 style={styles.createInput}
             />
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Pressable title={"Map"}
-                    onPress={() => navigation.navigate("Map", {
-                        location,
-                    })}>
+                {location ? (
+                
+                    <Pressable title={"Map"}
+                        onPress={() => navigation.navigate("Map", {
+                            location,
+                        })}>
+                        <Ionicons name="location-outline" size={24} color="#BDBDBD" />
+                    </Pressable>
+                ) : (
                     <Ionicons name="location-outline" size={24} color="#BDBDBD" />
-                </Pressable>
+                )}
                 <TextInput
                     onChangeText={placeHandler}
                     placeholder='place'
@@ -139,22 +184,26 @@ const CreatePostsScreen = ({ navigation }) => {
                     style={styles.createInput}
                 />
             </View>
-            <Pressable title={"Register"} style={styles.createButton}
-                onPress={() => navigation.navigate("PostScreen", {
-                    pictureHeaders,
-                    location,
-                    photoUrl,
-                })}
-            >
-                <Text>Publish</Text>
-            </Pressable>
+
+            {!photoUrl ? (
+                <View style={styles.postButtonInactive}>
+                    <Text>Publish</Text>
+                </View>
+            ) : (
+                <Pressable title={"Post"} style={styles.postButtonActive}
+                    onPress={makePost}
+                >
+                    <Text>Publish</Text>
+                </Pressable>
+            )}
         </View>
-    );
+    )
 };
 
 export default CreatePostsScreen;
 
 export const styles = StyleSheet.create({
+
     createPostsCont: {
         flex: 1,
         alignItems: 'center',
@@ -234,8 +283,31 @@ export const styles = StyleSheet.create({
         marginTop: 20,
 
     },
+    postButtonActive: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 300,
+        height: 50,
+        padding: 10,
+        borderColor: "#BDBDBD",
+        borderRadius: 100,
+        marginBottom: 10,
+        backgroundColor: '#FF6C00',
+        marginTop: 20,
+    },
 
+    postButtonInactive: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: 300,
+        height: 50,
+        padding: 10,
+        borderColor: "#BDBDBD",
+        borderRadius: 100,
+        marginBottom: 10,
+        backgroundColor: '#F6F6F6',
+        marginTop: 20,
+    },
 });
-
-
-
